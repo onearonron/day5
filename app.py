@@ -24,7 +24,7 @@ MAX_IMAGE_DIMENSION = 1280
 
 def get_db_connection():
     if DATABASE_URL:
-        conn = psycopg2.connect(DATABASE_URL)
+        conn = psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
         conn.autocommit = False
         return conn
     conn = sqlite3.connect(DB_PATH)
@@ -77,7 +77,7 @@ def init_db() -> None:
             }
         if "image_path" not in cols:
             conn.execute("ALTER TABLE post ADD COLUMN image_path TEXT")
-            conn.commit()
+        conn.commit()
 
 
 def save_uploaded_image(current_image_path: str | None = None) -> tuple[str | None, str | None]:
