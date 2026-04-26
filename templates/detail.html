@@ -38,7 +38,7 @@
 
         <section class="mb-12">
           {% if post.image_path %}
-          <img src="{{ url_for('static', filename=post.image_path) }}" alt="게시글 이미지" class="w-full max-h-[420px] object-cover border border-[#e7bdbb] mb-6"/>
+          <img src="{% if post.image_path.startswith('http') %}{{ post.image_path }}{% else %}{{ url_for('static', filename=post.image_path) }}{% endif %}" alt="게시글 이미지" class="w-full max-h-[420px] object-cover border border-[#e7bdbb] mb-6"/>
           {% endif %}
           <div class="space-y-4 text-[18px] leading-[1.8] text-[#5d3f3e] whitespace-pre-wrap">{{ post.content }}</div>
         </section>

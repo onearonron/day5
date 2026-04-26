@@ -7,11 +7,10 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.9"
+      # 외부 PostgreSQL (Neon / Supabase / 기타) 의 connection string
       - key: DATABASE_URL
-        fromDatabase:
-          name: day5-db
-          property: connectionString
-
-databases:
-  - name: day5-db
-    plan: free
+        sync: false
+      # Cloudinary: 대시보드에서 복사한 CLOUDINARY_URL 그대로 붙여넣기
+      # 예) cloudinary://123456789012345:abcdeFGHIJKL@cloud_name
+      - key: CLOUDINARY_URL
+        sync: false

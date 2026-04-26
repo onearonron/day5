@@ -10,6 +10,9 @@ from werkzeug.utils import secure_filename
 
 import psycopg2
 import psycopg2.extras
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 app = Flask(__name__)
 
@@ -20,6 +23,11 @@ UPLOAD_DIR = Path(os.getenv("UPLOAD_FOLDER", str(BASE_DIR / "static" / "uploads"
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
 MAX_IMAGE_DIMENSION = 1280
+
+CLOUDINARY_URL = os.getenv("CLOUDINARY_URL")
+
+if CLOUDINARY_URL:
+    cloudinary.config(cloudinary_url=CLOUDINARY_URL, secure=True)
 
 
 def get_db_connection():
@@ -96,6 +104,23 @@ def save_uploaded_image(current_image_path: str | None = None) -> tuple[str | No
     if file_size > MAX_IMAGE_SIZE_BYTES:
         return current_image_path, "이미지 크기는 최대 5MB까지 업로드할 수 있습니다."
 
+    public_id = f"board/{uuid.uuid4().hex}"
+
+    if CLOUDINARY_URL:
+        try:
+            result = cloudinary.uploader.upload(
+                image_file.stream,
+                public_id=public_id,
+                folder="board",
+                transformation={"width": MAX_IMAGE_DIMENSION, "height": MAX_IMAGE_DIMENSION, "crop": "limit"},
+                quality="auto",
+                fetch_format="auto",
+            )
+            _delete_image(current_image_path)
+            return result["secure_url"], None
+        except Exception:
+            return current_image_path, "이미지 업로드에 실패했습니다."
+
     stored_name = f"{uuid.uuid4().hex}.{extension}"
     destination = UPLOAD_DIR / stored_name
 
@@ -125,6 +150,21 @@ def save_uploaded_image(current_image_path: str | None = None) -> tuple[str | No
         return current_image_path, "유효한 이미지 파일이 아닙니다."
 
     return f"uploads/{stored_name}", None
+
+
+def _delete_image(image_path: str | None) -> None:
+    if not image_path or not CLOUDINARY_URL:
+        return
+    if image_path.startswith("http"):
+        try:
+            parts = image_path.split("/upload/")
+            if len(parts) == 2:
+                public_path = parts[1]
+                for fmt in ("png", "jpg", "jpeg", "gif", "webp"):
+                    public_path = public_path.replace(f".{fmt}", "")
+                cloudinary.uploader.destroy(public_path)
+        except Exception:
+            pass
 
 
 @app.route("/")
@@ -339,9 +379,14 @@ def post_edit(post_id: int) -> str:
 def post_delete(post_id: int) -> str:
     ph = _ph()
     with get_db_connection() as conn:
+        row = conn.execute(
+            f"SELECT image_path FROM post WHERE id = {ph}", (post_id,)
+        ).fetchone()
+        image_path = row[0] if row else None
         conn.execute(f"DELETE FROM post WHERE id = {ph}", (post_id,))
         conn.commit()
 
+    _delete_image(image_path)
     return redirect(url_for("post_list"))
 
 

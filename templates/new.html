@@ -51,7 +51,7 @@
             <label for="image" class="text-xs font-semibold uppercase tracking-widest text-[#596578]">사진 업로드</label>
             <input id="image" name="image" type="file" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp" class="block w-full border border-[#e7bdbb] bg-white px-3 py-2 text-sm text-[#5d3f3e]"/>
             {% if image_path %}
-            <img src="{{ url_for('static', filename=image_path) }}" alt="현재 업로드 이미지" class="h-28 w-auto border border-[#e7bdbb] bg-white"/>
+            <img src="{% if image_path.startswith('http') %}{{ image_path }}{% else %}{{ url_for('static', filename=image_path) }}{% endif %}" alt="현재 업로드 이미지" class="h-28 w-auto border border-[#e7bdbb] bg-white"/>
             {% endif %}
           </div>
 

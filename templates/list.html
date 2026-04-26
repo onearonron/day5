@@ -58,7 +58,7 @@
                 <a href="{{ url_for('post_detail', post_id=post.id) }}">{{ post.title }}</a>
               </h2>
               {% if post.image_path %}
-              <img src="{{ url_for('static', filename=post.image_path) }}" alt="게시글 이미지" class="w-full h-20 object-cover border border-[#e7bdbb] mt-1"/>
+              <img src="{% if post.image_path.startswith('http') %}{{ post.image_path }}{% else %}{{ url_for('static', filename=post.image_path) }}{% endif %}" alt="게시글 이미지" class="w-full h-20 object-cover border border-[#e7bdbb] mt-1"/>
               {% endif %}
               <p class="font-['Inter'] text-[12px] leading-[1.4] text-[#596578] mt-0.5">
                 {{ post.content[:80] }}{% if post.content|length > 80 %}...{% endif %}
